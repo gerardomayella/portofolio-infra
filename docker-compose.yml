@@ -21,7 +21,16 @@ services:
       - portofolio-web
     networks:
       - web_network
-
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare_tunnel
+    command: tunnel --url http://proxy:80
+    restart: unless-stopped
+    depends_on:
+      - proxy
+    networks:
+      - web_network
+      
 networks:
   web_network:
     driver: bridge
