@@ -1,51 +1,27 @@
 version: '3.8'
 
 services:
-  # ==========================================
-  # SERVICE 1: Aplikasi Next.js Anda
-  # ==========================================
   portofolio-web:
-    # PENTING: Ganti dengan username Docker Hub Anda yang asli
     image: gerardoardianta/portofolio-web:latest
     container_name: nextjs_portofolio
     restart: unless-stopped
-      
-    # Kita menggunakan 'expose', bukan 'ports'.
-    # Ini berarti port 3000 HANYA terbuka untuk jaringan internal Docker,
-    # tidak bisa diakses langsung dari IP_VM:3000 oleh pihak luar. Keamanan ekstra!
     expose:
       - "3000"
-      
     networks:
       - web_network
-
-  # ==========================================
-  # SERVICE 2: Nginx Reverse Proxy
-  # ==========================================
   proxy:
     image: nginx:alpine
     container_name: nginx_proxy
     restart: unless-stopped
-    
-    # Nginx bertugas menjaga pintu depan (Port 80 untuk HTTP)
     ports:
-      - "80:80"
-      # Jika nanti Anda memasang SSL Let's Encrypt, buka juga port 443
-      # - "443:443"
-      
+      - "80:80" 
     volumes:
-      # Menyuntikkan file konfigurasi nginx dari VM ke dalam container Nginx
-      # Parameter ':ro' berarti Read-Only (Nginx tidak bisa mengubah file aslinya)
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      
-    # Memastikan Nginx baru menyala SETELAH aplikasi Next.js siap
     depends_on:
       - portofolio-web
-      
     networks:
       - web_network
 
-# Mendefinisikan jaringan privat khusus agar kedua container bisa saling mengobrol
 networks:
   web_network:
     driver: bridge
