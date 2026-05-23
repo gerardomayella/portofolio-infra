@@ -31,6 +31,64 @@ services:
     networks:
       - web_network
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - monitoring_network
+      - web_network
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - node_exporter
+      - portofolio-web
+      - proxy
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    networks:
+      - monitoring_network
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx_exporter
+    restart: unless-stopped
+    networks:
+      - monitoring_network
+      - web_network
+    command: -nginx.scrape-uri http://proxy:80/stub_status
+    depends_on:
+      - proxy
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "7084:3000"
+    networks:
+      - monitoring_network
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+
 networks:
   web_network:
     driver: bridge
+  monitoring_network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
